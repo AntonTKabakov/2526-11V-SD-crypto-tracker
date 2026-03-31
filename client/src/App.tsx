@@ -1,28 +1,48 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { MacbookScroll } from "@/components/ui/macbook-scroll";
-import icon from "../public/icon.png";
+import {NoiseBackground} from "@/components/ui/noise-background";
+import { GooeyInput } from "@/components/ui/gooey-input";
 
-import FloatingDockDemo from "./components/floating-dock-demo" 
+import FloatingDockComponent from "./components/floating-dock-component" 
+
+import icon from "../public/icon.png";
 
 function App() {
   return (
-    <div>
-      <FloatingDockDemo/>
-      <div className="w-full overflow-hidden bg-white dark:bg-[#0B0B0F]">
+  <div className="relative w-full bg-white dark:bg-[#0B0B0F]">
 
+    CENTERED DOCK
+    <div className="flex justify-center py-4">
+      <FloatingDockComponent />
+      <GooeyInput placeholder="Search..." expandedOffset={0}/>
+    </div>
+
+    <NoiseBackground
+      containerClassName="absolute left-12 top-12 w-40 h-40 rounded-full overflow-hidden flex items-center justify-center"
+      gradientColors={[
+        "rgb(255, 100, 150)",
+        "rgb(100, 150, 255)",
+        "rgb(255, 200, 100)",
+      ]}
+    >
+      <img
+        src={icon}
+        alt="side"
+        className="w-full h-full object-cover"
+      />
+    </NoiseBackground>
+    <div className="w-full overflow-hidden">
       <MacbookScroll
-        title={
-          ""
-        }
+        title={""}
         badge={
-          <img src={icon} className="w-40 h-30"  alt="icon" />
+          <img src={icon} className="w-20 h-30" alt="icon" />
         }
         src={`/linear.webp`}
         showGradient={false}
       />
     </div>
-    </div>
-    )
+  </div>
+);
 }
 
 export default App

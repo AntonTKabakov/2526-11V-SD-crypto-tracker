@@ -9,7 +9,7 @@ import {
   IconTerminal2,
 } from "@tabler/icons-react";
 
-export default function FloatingDockDemo() {
+export default function FloatingDockComponent() {
   const links = [
     {
       title: "Home",
@@ -69,9 +69,8 @@ export default function FloatingDockDemo() {
     },
   ];
   return (
-    <div className="flex items-center justify-center bg-white h-[7rem] dark:bg-[#0B0B0F] w-full">
+    <div className="flex items-center justify-center bg-white h-[8rem] dark:bg-[#0B0B0F] w-full">
       <FloatingDock
-        mobileClassName="translate-y-20" // only for demo, remove for production
         items={links}
       />
     </div>
