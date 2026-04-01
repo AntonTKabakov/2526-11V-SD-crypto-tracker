@@ -1,26 +1,16 @@
 "use client";
 
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  useId,
-  useMemo,
-  useCallback,
-  type ChangeEvent,
-} from "react";
-import { motion } from "motion/react";
+import { useState, useRef, useEffect, useId } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-function GooeyFilter({
-  filterId,
-  blur,
-}: {
-  filterId: string;
-  blur: number;
-}) {
+/**
+ * HELPER COMPONENT: GooeyFilter
+ * This MUST be in the same file or imported.
+ */
+function GooeyFilter({ filterId, blur }: { filterId: string; blur: number }) {
   return (
-    <svg className="absolute pointer-events-none h-0 w-0" aria-hidden="true">
+    <svg className="absolute hidden h-0 w-0" aria-hidden>
       <defs>
         <filter id={filterId} x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur in="SourceGraphic" stdDeviation={blur} result="blur" />
@@ -37,6 +27,9 @@ function GooeyFilter({
   );
 }
 
+/**
+ * HELPER COMPONENT: SearchIcon
+ */
 function SearchIcon({ layoutId }: { layoutId: string }) {
   return (
     <motion.svg
@@ -56,223 +49,113 @@ function SearchIcon({ layoutId }: { layoutId: string }) {
   );
 }
 
-const transition = {
-  duration: 0.4,
-  type: "spring" as const,
-  bounce: 0.25,
+const transition = { 
+  type: "spring", 
+  stiffness: 260, 
+  damping: 20, 
+  mass: 0.8 
 };
-
-const iconBubbleVariants = {
-  collapsed: { scale: 0, opacity: 0 },
-  expanded: { scale: 1, opacity: 1 },
-};
-
-export interface GooeyInputClassNames {
-  root?: string;
-  filterWrap?: string;
-  buttonRow?: string;
-  trigger?: string;
-  input?: string;
-  bubble?: string;
-  bubbleSurface?: string;
-}
-
-export interface GooeyInputProps {
-  placeholder?: string;
-  className?: string;
-  classNames?: GooeyInputClassNames;
-  collapsedWidth?: number;
-  expandedWidth?: number;
-  expandedOffset?: number;
-  gooeyBlur?: number;
-  value?: string;
-  defaultValue?: string;
-  onValueChange?: (value: string) => void;
-  onOpenChange?: (open: boolean) => void;
-  disabled?: boolean;
-}
 
 export function GooeyInput({
-  placeholder = "Type to search...",
+  placeholder = "Search...",
   className,
-  classNames,
-  collapsedWidth = 115,
-  expandedWidth = 200,
-  expandedOffset = 50,
+  collapsedWidth = 48,
+  expandedWidth = 350,
   gooeyBlur = 5,
-  value: valueProp,
-  defaultValue = "",
-  onValueChange,
-  onOpenChange,
-  disabled = false,
-}: GooeyInputProps) {
+}: {
+  placeholder?: string;
+  className?: string;
+  collapsedWidth?: number;
+  expandedWidth?: number;
+  gooeyBlur?: number;
+}) {
   const reactId = useId();
   const safeId = reactId.replace(/:/g, "");
   const filterId = `gooey-filter-${safeId}`;
   const iconLayoutId = `gooey-input-icon-${safeId}`;
-  const inputLayoutId = `gooey-input-field-${safeId}`;
-
+  
   const inputRef = useRef<HTMLInputElement>(null);
-  const prevExpandedRef = useRef(false);
-
   const [isExpanded, setIsExpanded] = useState(false);
-  const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue);
-
-  const isControlled = valueProp !== undefined;
-  const searchText = isControlled ? valueProp : uncontrolledValue;
-
-  const setSearchText = useCallback(
-    (next: string) => {
-      if (!isControlled) setUncontrolledValue(next);
-      onValueChange?.(next);
-    },
-    [isControlled, onValueChange],
-  );
-
-  const setExpanded = useCallback(
-    (next: boolean) => {
-      setIsExpanded(next);
-      onOpenChange?.(next);
-    },
-    [onOpenChange],
-  );
+  const [value, setValue] = useState("");
 
   useEffect(() => {
     if (isExpanded) {
       inputRef.current?.focus();
-    } else if (prevExpandedRef.current) {
-      setSearchText("");
     }
+  }, [isExpanded]);
 
-    prevExpandedRef.current = isExpanded;
-  }, [isExpanded, setSearchText]);
-
-  const buttonVariants = useMemo(
-    () => ({
-      collapsed: { width: collapsedWidth, marginLeft: 0 },
-      expanded: { width: expandedWidth, marginLeft: expandedOffset },
-    }),
-    [collapsedWidth, expandedWidth, expandedOffset],
-  );
-
-  const handleExpand = useCallback(() => {
-    if (!disabled) setExpanded(true);
-  }, [disabled, setExpanded]);
-
-  const handleChange = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => {
-      setSearchText(e.target.value);
-    },
-    [setSearchText],
-  );
-
-  const handleBlur = useCallback(() => {
-    if (!searchText) setExpanded(false);
-  }, [searchText, setExpanded]);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Escape") setExpanded(false);
-    },
-    [setExpanded],
-  );
-
-  const surfaceClass =
-    "bg-black text-white shadow-sm ring-1 ring-gray-400";
+  const surfaceClass = "bg-white text-black shadow-xl ring-1 ring-black/5 dark:bg-neutral-900 dark:text-white dark:ring-white/10";
 
   return (
-    <div
-      className={cn(
-        "relative flex items-center justify-center",
-        className,
-        classNames?.root,
-      )}
-    >
-      <GooeyFilter filterId={filterId} blur={gooeyBlur} />
-
-      <div
+  <div className={cn("relative flex items-center justify-center", className)}>
+    <GooeyFilter filterId={filterId} blur={gooeyBlur} />
+    
+    {/* CHANGED: h-12 here instead of h-16 matches the dock height better */}
+    <div className="relative flex h-12 items-center" style={{ filter: `url(#${filterId})` }}>
+      <motion.div
+        layout
+        initial={false}
+        animate={{ 
+          width: isExpanded ? expandedWidth : collapsedWidth,
+          paddingLeft: isExpanded ? 52 : 0,
+          paddingRight: isExpanded ? 16 : 0,
+        }}
+        transition={transition}
+        onClick={() => {
+          !isExpanded && setIsExpanded(true)
+          console.log(value);
+        }}
         className={cn(
-          "relative flex h-10 items-center justify-center",
-          classNames?.filterWrap,
+          "flex h-12 items-center rounded-full overflow-hidden shrink-0 cursor-pointer", 
+          !isExpanded && "justify-center",
+          surfaceClass
         )}
-        style={{ filter: `url(#${filterId})` }}
       >
-        <motion.div
-          className={cn(
-            "flex h-10 items-center justify-center",
-            classNames?.buttonRow,
+        <AnimatePresence mode="wait">
+          {!isExpanded && (
+            <motion.div
+              key="collapsed-icon"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center justify-center"
+            >
+              <SearchIcon layoutId={iconLayoutId} />
+            </motion.div>
           )}
-          variants={buttonVariants}
-          initial="collapsed"
-          animate={isExpanded ? "expanded" : "collapsed"}
-          transition={transition}
-        >
-          <div
-            className={cn(
-              "flex h-10 w-full items-center gap-2 rounded-full px-4",
-              surfaceClass,
-              classNames?.trigger,
-            )}
-          >
-            {!isExpanded && (
-              <button
-                type="button"
-                disabled={disabled}
-                onClick={handleExpand}
-                className="flex size-5 shrink-0 items-center justify-center outline-none disabled:pointer-events-none"
-                aria-label="Open search"
-              >
-                <SearchIcon layoutId={iconLayoutId} />
-              </button>
-            )}
-
+        </AnimatePresence>
+        {isExpanded && (
             <motion.input
-              layoutId={inputLayoutId}
-              ref={inputRef}
-              type="search"
-              enterKeyHint="search"
-              autoComplete="off"
-              value={searchText}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              onKeyDown={handleKeyDown}
-              onFocus={() => {
-                if (!disabled) setExpanded(true);
-              }}
-              disabled={disabled}
-              placeholder={placeholder}
-              className={cn(
-                "h-full min-w-0 flex-1 bg-transparent text-sm text-white outline-none",
-                isExpanded
-                  ? "placeholder:text-white/50"
-                  : "pointer-events-none w-0 flex-none placeholder:text-white/70",
-                classNames?.input,
-              )}
-            />
-          </div>
-        </motion.div>
-
-        <motion.div
-          className={cn(
-            "absolute top-1/2 left-0 flex size-10 -translate-y-1/2 items-center justify-center",
-            classNames?.bubble,
+          ref={inputRef}
+          layout
+          type="text"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={() => !value && setIsExpanded(false)}
+          placeholder={placeholder}
+          animate={{ opacity: isExpanded ? 1 : 0 }}
+          className="bg-transparent outline-none flex-1 min-w-0 text-sm placeholder:text-neutral-500"
+        />
           )}
-          variants={iconBubbleVariants}
-          initial="collapsed"
-          animate={isExpanded ? "expanded" : "collapsed"}
-          transition={transition}
-        >
-          <div
-            className={cn(
-              "flex size-10 items-center justify-center rounded-full",
-              surfaceClass,
-              classNames?.bubbleSurface,
-            )}
-          >
-            <SearchIcon layoutId={iconLayoutId} />
-          </div>
-        </motion.div>
-      </div>
+        
+      </motion.div>
+
+      <motion.div
+        initial={false}
+        animate={{ 
+          scale: isExpanded ? 1 : 0, 
+          opacity: isExpanded ? 1 : 0,
+        }}
+        transition={transition}
+        // CHANGED: absolute top-0 ensures it stays perfectly aligned with the parent
+        className={cn(
+          "absolute top-0 left-0 size-12 flex items-center justify-center rounded-full shrink-0 z-10 pointer-events-none", 
+          surfaceClass
+        )}
+      >
+        <SearchIcon layoutId={iconLayoutId} />
+      </motion.div>
     </div>
-  );
+  </div>
+);
 }

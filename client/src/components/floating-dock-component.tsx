@@ -1,5 +1,6 @@
 import React from "react";
 import { FloatingDock } from "@/components/ui/floating-dock";
+import { GooeyInput } from "@/components/ui/gooey-input";
 import {
   IconBrandGithub,
   IconBrandX,
@@ -69,10 +70,14 @@ export default function FloatingDockComponent() {
     },
   ];
   return (
-    <div className="flex items-center justify-center bg-white h-[8rem] dark:bg-[#0B0B0F] w-full">
-      <FloatingDock
-        items={links}
-      />
-    </div>
+    <div className="flex flex-row items-center justify-center gap-4 bg-[#0B0B0F] h-[10rem] w-full">
+  <FloatingDock items={links} desktopClassName="mx-0" />
+  
+  <GooeyInput 
+    placeholder="Search for projects..." 
+    collapsedWidth={48} // Perfectly round (matches height)
+    expandedWidth={220} 
+  />
+</div>
   );
 }

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { MacbookScroll } from "@/components/ui/macbook-scroll";
 import {NoiseBackground} from "@/components/ui/noise-background";
-import { GooeyInput } from "@/components/ui/gooey-input";
 
 import FloatingDockComponent from "./components/floating-dock-component" 
 
@@ -14,7 +13,6 @@ function App() {
     CENTERED DOCK
     <div className="flex justify-center py-4">
       <FloatingDockComponent />
-      <GooeyInput placeholder="Search..." expandedOffset={0}/>
     </div>
 
     <NoiseBackground
