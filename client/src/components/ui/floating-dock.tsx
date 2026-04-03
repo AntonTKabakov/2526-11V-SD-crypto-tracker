@@ -18,6 +18,7 @@ import {
 
 import { useRef, useState } from "react";
 import React = require("react");
+import { Link } from "react-router";
 
 export const FloatingDock = ({
   items,
@@ -69,13 +70,14 @@ const FloatingDockMobile = ({
                 }}
                 transition={{ delay: (items.length - 1 - idx) * 0.05 }}
               >
-                <a
-                  href={item.href}
-                  key={item.title}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 dark:bg-neutral-900"
-                >
-                  <div className="h-4 w-4">{item.icon}</div>
-                </a>
+                <Link to={item.href} >
+                  <a
+                    key={item.title}
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0B0B0F]/80 backdrop-blur-xl border border-white/10"
+                  >
+                    <div className="h-4 w-4">{item.icon}</div>
+                  </a>
+                </Link>
               </motion.div>
             ))}
           </motion.div>
@@ -172,7 +174,7 @@ function IconContainer({
         style={{ width, height }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        className="relative flex aspect-square items-center justify-center rounded-full bg-gray-200 dark:bg-neutral-800"
+        className="relative flex aspect-square items-center justify-center rounded-full bg-[#111117] border border-white/10"
       >
         <AnimatePresence>
           {hovered && (
