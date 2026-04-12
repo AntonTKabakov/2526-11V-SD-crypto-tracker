@@ -28,10 +28,11 @@ export default function Home() {
               Log in
             </button>
           </Link>
-
-          <button className="shadow-[inset_0_0_0_2px_#616467] px-8 py-4 rounded-full font-bold text-white tracking-widest uppercase transform hover:scale-110 hover:bg-[#00F5C8] transition-colors duration-200 hover:shadow-2xl hover:shadow-[#00F5C8]/[0.5]">
-            Sign up
-          </button>
+          <Link to="/signup">
+            <button className="shadow-[inset_0_0_0_2px_#616467] px-8 py-4 rounded-full font-bold text-white tracking-widest uppercase transform hover:scale-110 hover:bg-[#00F5C8] transition-colors duration-200 hover:shadow-2xl hover:shadow-[#00F5C8]/[0.5]">
+              Sign up
+            </button>
+          </Link>
         </div>
 
         <div className="w-full overflow-hidden">
