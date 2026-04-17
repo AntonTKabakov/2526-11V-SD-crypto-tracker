@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using server.Date;
 using server.Models;
 using server.Service;
+using static System.Collections.Specialized.BitVector32;
 
 namespace server.Controllers;
 
@@ -26,7 +27,57 @@ public class AuthController : ControllerBase
         _tokenService = tokenService;
     }
 
-    //todo logout
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout()
+    {
+        var token = Request.Cookies["refresh_token"];
+
+        if (string.IsNullOrEmpty(token))
+            return Unauthorized();
+
+        var refreshToken = await _db.RefreshToken
+                .Include(rt => rt.Session)
+                .FirstOrDefaultAsync(rt => rt.Token == token);
+
+        if (refreshToken == null ||
+            refreshToken.IsRevoked ||
+            refreshToken.ExpiresAt < DateTime.UtcNow)
+        {
+            return Unauthorized();
+        }
+
+        var session = refreshToken.Session;
+
+        session.RevokedAt = DateTime.UtcNow;
+
+        var refreshTokens = await _db.RefreshToken
+            .Where(x => x.SessionId == session.Id)
+            .ToListAsync();
+
+        if (refreshTokens == null)
+            return Unauthorized();
+
+        foreach (var i in refreshTokens)
+        {
+            i.RevokedAt = DateTime.UtcNow;
+            i.IsRevoked = true;
+        }
+
+        await _db.SaveChangesAsync();
+
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.None,
+            Expires = DateTime.UtcNow.AddDays(-1)
+        };
+
+        Response.Cookies.Append("refresh_token", "", cookieOptions);
+        Response.Cookies.Append("access_token", "", cookieOptions);
+
+        return Ok();
+    }
 
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh()
@@ -53,19 +104,7 @@ public class AuthController : ControllerBase
         if (refreshToken.RevokedAt != null)
             return Unauthorized();
 
-        var user = refreshToken.Session.User;
-
-        var accessToken = _tokenService.GenerateAccessToken(user.Id.ToString());
-
-        Response.Cookies.Append("access_token", accessToken, new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.None,
-            Expires = DateTime.UtcNow.AddMinutes(15)
-        });
-
-        return Ok();
+        return await IssueTokens(refreshToken.Session.User, refreshToken.Session);
     }
 
     [HttpPost("register")]
@@ -90,9 +129,20 @@ public class AuthController : ControllerBase
         user.PasswordHash = _hasher.HashPassword(user, req.Password);
 
         _db.Users.Add(user);
-        await _db.SaveChangesAsync(); 
+        await _db.SaveChangesAsync();
 
-        return await IssueTokens(user);
+        var session = new Session
+        {
+            UserId = user.Id,
+            CreatedAt = DateTime.UtcNow,
+            IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+            UserAgent = Request.Headers["User-Agent"].ToString()
+        };
+
+        _db.Session.Add(session);
+        await _db.SaveChangesAsync();
+
+        return await IssueTokens(user, session);
     }
 
     [HttpPost("login")]
@@ -107,11 +157,6 @@ public class AuthController : ControllerBase
         if (ok == PasswordVerificationResult.Failed)
             return Unauthorized("Invalid email or password.");
 
-        return await IssueTokens(user);
-    }
-
-    private async Task<IActionResult> IssueTokens(User user)
-    {
         var session = new Session
         {
             UserId = user.Id,
@@ -123,6 +168,11 @@ public class AuthController : ControllerBase
         _db.Session.Add(session);
         await _db.SaveChangesAsync();
 
+        return await IssueTokens(user, session);
+    }
+
+    private async Task<IActionResult> IssueTokens(User user, Session session)
+    {
         var refreshJwt = _tokenService.GenerateRefreshToken();
 
         var refreshToken = new RefreshToken
