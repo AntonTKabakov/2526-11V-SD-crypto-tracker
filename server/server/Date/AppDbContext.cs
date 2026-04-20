@@ -45,6 +45,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<RefreshToken>(e =>
         {
             e.HasKey(x => x.Id);
+            e.HasIndex(x => x.Token).IsUnique();
 
             e.HasIndex(x => x.SessionId);
         });

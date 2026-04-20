@@ -8,7 +8,7 @@ public class Session
     public User User { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime? RevokedAt { get; set; }
+    public DateTime? RevokedAt { get; set; } = null;
 
     public string? UserAgent { get; set; }
     public string? IpAddress { get; set; }

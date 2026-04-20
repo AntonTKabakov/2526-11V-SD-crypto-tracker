@@ -17,31 +17,25 @@ public record LoginRequest(string Email, string Password);
 public class AuthController : ControllerBase
 {
     private readonly AppDbContext _db;
-    private readonly PasswordHasher<User> _hasher;
+    private readonly PasswordHasher<User> _userHasher;
     private readonly TokenService _tokenService;
 
-    public AuthController(AppDbContext db, PasswordHasher<User> hasher, TokenService tokenService)
+    public AuthController(
+        AppDbContext db, 
+        PasswordHasher<User> userHasher,
+        TokenService tokenService)
     {
         _db = db;
-        _hasher = hasher;
+        _userHasher = userHasher;
         _tokenService = tokenService;
     }
 
     [HttpPost("logout")]
     public async Task<IActionResult> Logout()
     {
-        var token = Request.Cookies["refresh_token"];
+        var refreshToken = await GetRefreshToken();
 
-        if (string.IsNullOrEmpty(token))
-            return Unauthorized();
-
-        var refreshToken = await _db.RefreshToken
-                .Include(rt => rt.Session)
-                .FirstOrDefaultAsync(rt => rt.Token == token);
-
-        if (refreshToken == null ||
-            refreshToken.IsRevoked ||
-            refreshToken.ExpiresAt < DateTime.UtcNow)
+        if (refreshToken == null)
         {
             return Unauthorized();
         }
@@ -53,9 +47,6 @@ public class AuthController : ControllerBase
         var refreshTokens = await _db.RefreshToken
             .Where(x => x.SessionId == session.Id)
             .ToListAsync();
-
-        if (refreshTokens == null)
-            return Unauthorized();
 
         foreach (var i in refreshTokens)
         {
@@ -82,29 +73,24 @@ public class AuthController : ControllerBase
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh()
     {
-        var token = Request.Cookies["refresh_token"];
+        var refreshToken = await GetRefreshToken();
 
-        if (string.IsNullOrEmpty(token))
+        if (refreshToken == null || refreshToken.Session.RevokedAt != null)
+        {
             return Unauthorized();
+        }
 
-        var refreshToken = await _db.RefreshToken
-            .Include(rt => rt.Session)
-            .ThenInclude(s => s.User)
-            .FirstOrDefaultAsync(rt => rt.Token == token);
+        var activeTokens = await _db.RefreshToken
+            .Where(x => x.SessionId == refreshToken.SessionId && !x.IsRevoked)
+            .ToListAsync();
 
-        if (refreshToken == null)
-            return Unauthorized();
+        foreach (var t in activeTokens)
+        {
+            t.IsRevoked = true;
+            t.RevokedAt = DateTime.UtcNow;
+        }
 
-        if (refreshToken.IsRevoked)
-            return Unauthorized();
-
-        if (refreshToken.ExpiresAt <= DateTime.UtcNow)
-            return Unauthorized();
-
-        if (refreshToken.RevokedAt != null)
-            return Unauthorized();
-
-        return await IssueTokens(refreshToken.Session.User, refreshToken.Session);
+        return await IssueTokens(refreshToken.Session.User, refreshToken.Session,refreshToken);
     }
 
     [HttpPost("register")]
@@ -119,6 +105,8 @@ public class AuthController : ControllerBase
         if (await _db.Users.AnyAsync(u => u.Email == email))
             return Conflict("Email already exists.");
 
+        var tx = await _db.Database.BeginTransactionAsync();
+
         var user = new User
         {
             Email = email,
@@ -126,7 +114,8 @@ public class AuthController : ControllerBase
             CreatedAtUtc = DateTime.UtcNow,
             LastSeenUtc = DateTime.UtcNow
         };
-        user.PasswordHash = _hasher.HashPassword(user, req.Password);
+
+        user.PasswordHash = _userHasher.HashPassword(user, req.Password);
 
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
@@ -142,7 +131,11 @@ public class AuthController : ControllerBase
         _db.Session.Add(session);
         await _db.SaveChangesAsync();
 
-        return await IssueTokens(user, session);
+        var result = await IssueTokens(user, session, null);
+
+        await tx.CommitAsync();
+
+        return result;
     }
 
     [HttpPost("login")]
@@ -153,7 +146,7 @@ public class AuthController : ControllerBase
         if (user is null) 
             return Unauthorized("Invalid email or password.");
 
-        var ok = _hasher.VerifyHashedPassword(user, user.PasswordHash, req.Password);
+        var ok = _userHasher.VerifyHashedPassword(user, user.PasswordHash, req.Password);
         if (ok == PasswordVerificationResult.Failed)
             return Unauthorized("Invalid email or password.");
 
@@ -168,22 +161,69 @@ public class AuthController : ControllerBase
         _db.Session.Add(session);
         await _db.SaveChangesAsync();
 
-        return await IssueTokens(user, session);
+        return await IssueTokens(user, session,null);
     }
 
-    private async Task<IActionResult> IssueTokens(User user, Session session)
+    private async Task<RefreshToken?> GetRefreshToken()
     {
-        var refreshJwt = _tokenService.GenerateRefreshToken();
+        var token = Request.Cookies["refresh_token"];
 
-        var refreshToken = new RefreshToken
+        if (string.IsNullOrEmpty(token))
+            return null;
+
+        var refreshToken = await _db.RefreshToken
+            .Include(rt => rt.Session)
+            .ThenInclude(s => s.User)
+            .FirstOrDefaultAsync(rt => rt.Token == TokenHasher.Hash(token));
+
+        if (refreshToken.IsRevoked ||
+            refreshToken.RevokedAt != null ||
+            refreshToken.ExpiresAt < DateTime.UtcNow)
+        {
+            refreshToken.Session.RevokedAt = DateTime.UtcNow;
+
+            var tokens = await _db.RefreshToken
+                .Where(x => x.SessionId == refreshToken.SessionId)
+                .ToListAsync();
+
+            foreach (var t in tokens)
+            {
+                t.IsRevoked = true;
+                t.RevokedAt = DateTime.UtcNow;
+            }
+
+            await _db.SaveChangesAsync();
+
+            return null;
+        }
+
+        return refreshToken;
+    }
+
+    private async Task<IActionResult> IssueTokens(User user, Session session, RefreshToken? refreshToken)
+    {
+        bool exists;
+        string refreshJwt;
+
+        do
+        {
+            refreshJwt = _tokenService.GenerateRefreshToken();
+
+            exists = await _db.RefreshToken
+                .AnyAsync(rt => rt.Token == TokenHasher.Hash(refreshJwt));
+
+        } while (exists);
+
+        var newRefreshToken = new RefreshToken
         {
             SessionId = session.Id,
             ExpiresAt = DateTime.UtcNow.AddDays(7),
             IsRevoked = false,
-            Token = refreshJwt
+            Token = TokenHasher.Hash(refreshJwt),
+            ReplacedByTokenId = refreshToken?.Id.ToString()
         };
 
-        _db.RefreshToken.Add(refreshToken);
+        _db.RefreshToken.Add(newRefreshToken);
         await _db.SaveChangesAsync();
 
         var accessToken = _tokenService.GenerateAccessToken(user.Id.ToString());
