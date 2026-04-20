@@ -8,8 +8,7 @@ namespace server.Service;
 
 public class TokenService
 {
-    private readonly string _accessSecret = "ACCESS_SECRET_KEY_123ACCESS_SECRET_KEY_123";
-    private readonly string _refreshSecret = "REFRESH_SECRET_KEY_456ACCESS_SECRET_KEY_123";
+    private readonly string _accessSecret = "ACCESS_SECRET_KEY_123ACCESS_SECRET_KEY_123";//temp
 
     public string GenerateAccessToken(string userId)
     {

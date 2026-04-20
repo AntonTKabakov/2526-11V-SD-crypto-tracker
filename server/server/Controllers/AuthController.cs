@@ -150,6 +150,8 @@ public class AuthController : ControllerBase
         if (ok == PasswordVerificationResult.Failed)
             return Unauthorized("Invalid email or password.");
 
+        user.LastSeenUtc = DateTime.UtcNow;
+
         var session = new Session
         {
             UserId = user.Id,
@@ -175,6 +177,8 @@ public class AuthController : ControllerBase
             .Include(rt => rt.Session)
             .ThenInclude(s => s.User)
             .FirstOrDefaultAsync(rt => rt.Token == TokenHasher.Hash(token));
+
+        if (refreshToken == null) return null;
 
         if (refreshToken.IsRevoked ||
             refreshToken.RevokedAt != null ||
@@ -220,11 +224,16 @@ public class AuthController : ControllerBase
             ExpiresAt = DateTime.UtcNow.AddDays(7),
             IsRevoked = false,
             Token = TokenHasher.Hash(refreshJwt),
-            ReplacedByTokenId = refreshToken?.Id.ToString()
         };
 
         _db.RefreshToken.Add(newRefreshToken);
         await _db.SaveChangesAsync();
+
+        if (refreshToken != null)
+        {
+            refreshToken.ReplacedByTokenId = newRefreshToken.Id.ToString();
+            await _db.SaveChangesAsync();
+        }
 
         var accessToken = _tokenService.GenerateAccessToken(user.Id.ToString());
 
@@ -246,7 +255,7 @@ public class AuthController : ControllerBase
 
         return Ok(new
         {
-            user.Id,
+            isSuccess = true,
             user.Email,
             user.Username
         });

@@ -1,11 +1,54 @@
-import { Link } from 'react-router';
+import { Link, Navigate } from 'react-router-dom'; 
+import {refresh, register} from"../api/auth";
 
 import FloatingDockComponent from "../components/floating-dock-component";
 import NoiseBackgroundIcon from "../components/noise-background-logo";
 import MainBackround from "../components/main-backroudn";
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 export default function Signup() {
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+
+  useEffect(() => {
+    const run = async () => {
+      const result = await refresh();
+      console.log("refresh:", result);
+
+      if (result?.isSuccess) {
+        setShouldRedirect(true);
+      }
+    };
+
+    run();
+  }, []);
+
+  if (shouldRedirect) {
+    return <Navigate to="/" replace />;
+  }
+
+  async function handleSignup() {
+    if (password !== confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
+
+    try {
+      const result = await register(email, password, username);
+      console.log("Signup in:", result);
+      
+      if (result?.isSuccess) {
+        setShouldRedirect(true);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   return (
     <div className="relative w-full min-h-screen overflow-hidden bg-white dark:bg-[#0B0B0F]">
        <MainBackround/>
@@ -49,30 +92,41 @@ export default function Signup() {
           <input
             type="text"
             placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             className="w-full px-4 py-3 rounded-lg bg-[#020617]/80 border border-white/10 focus:outline-none focus:border-[#00F5C8]"
           />
 
           <input
             type="text"
             placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full px-4 py-3 rounded-lg bg-[#020617]/80 border border-white/10 focus:outline-none focus:border-[#00F5C8]"
           />
 
           <input
             type="password"
             placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}            
             className="w-full px-4 py-3 rounded-lg bg-[#020617]/80 border border-white/10 focus:outline-none focus:border-[#00F5C8]"
           />
 
           <input
             type="password"
             placeholder="Password confirm"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}            
             className="w-full px-4 py-3 rounded-lg bg-[#020617]/80 border border-white/10 focus:outline-none focus:border-[#00F5C8]"
           />
 
-          {/* Login Button (placeholder) */}
-          <button className="mt-2 py-3 rounded-lg font-bold tracking-widest uppercase bg-[#00F5C8] text-black hover:brightness-110 transition">
-            Login
+          {/* Signup Button (placeholder) */}
+          <button 
+            className="mt-2 py-3 rounded-lg font-bold tracking-widest uppercase bg-[#00F5C8] text-black hover:brightness-110 transition"
+            onClick={handleSignup}
+            >
+            Signup
           </button>
 
         </div>
