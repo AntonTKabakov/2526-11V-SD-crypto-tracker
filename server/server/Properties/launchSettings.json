@@ -3,7 +3,11 @@
     "http": {
       "commandName": "Project",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "JWT_ACCESS_SECRET": "MySuperSecretKey_2026_Viktor_!@#_VeryLong123",
+        "COINGECKO_DEMO_API_KEY": "CG-uVgZd63tdt7488Jbs1V5NMTS",
+        "COINGECKO_BASE_URL": "https://api.coingecko.com/api/v3/",
+        "MORALIS_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjRiNjhjOWQwLWY2NWQtNDAzZC1hOWViLWMxMDM4YWU0ZDI2YyIsIm9yZ0lkIjoiNTExNTg5IiwidXNlcklkIjoiNTI2NDEzIiwidHlwZUlkIjoiMDFiYWRhMzItMzgwMC00YTEyLTk5ZTUtZDkxMDlkMjAxMTc0IiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3NzY3NTg5NzMsImV4cCI6NDkzMjUxODk3M30.rdFQpY-9yPG_AGfP5a7odYG9TEBLw-LSoWpbM5KmBxk"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5247"
@@ -11,7 +15,11 @@
     "https": {
       "commandName": "Project",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "JWT_ACCESS_SECRET": "MySuperSecretKey_2026_Viktor_!@#_VeryLong123",
+        "COINGECKO_DEMO_API_KEY": "CG-uVgZd63tdt7488Jbs1V5NMTS",
+        "COINGECKO_BASE_URL": "https://api.coingecko.com/api/v3/",
+        "MORALIS_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjRiNjhjOWQwLWY2NWQtNDAzZC1hOWViLWMxMDM4YWU0ZDI2YyIsIm9yZ0lkIjoiNTExNTg5IiwidXNlcklkIjoiNTI2NDEzIiwidHlwZUlkIjoiMDFiYWRhMzItMzgwMC00YTEyLTk5ZTUtZDkxMDlkMjAxMTc0IiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3NzY3NTg5NzMsImV4cCI6NDkzMjUxODk3M30.rdFQpY-9yPG_AGfP5a7odYG9TEBLw-LSoWpbM5KmBxk"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "https://localhost:7269;http://localhost:5247"
