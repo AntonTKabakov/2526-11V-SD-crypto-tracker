@@ -1,6 +1,9 @@
 import { NavLink, Outlet } from "react-router-dom";
 
 const navigationItems = [
+  { href: "/assets", label: "Assets" },
+  { href: "/history", label: "History" },
+  { href: "/statistics", label: "Statistics" },
   { href: "/wallet", label: "Wallet" },
 ];
 
