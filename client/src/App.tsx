@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import PortfolioLayout from "./components/portfolio-layout";
 import History from "./pages/History";
+import Statistics from "./pages/Statistics";
 import Wallet from "./pages/Wallet";
 
 export default function App() {
@@ -10,6 +11,7 @@ export default function App() {
       <Route path="/" element={<Navigate replace to="/wallet" />} />
       <Route element={<PortfolioLayout />}>
         <Route path="/history" element={<History />} />
+        <Route path="/statistics" element={<Statistics />} />
         <Route path="/wallet" element={<Wallet />} />
       </Route>
     </Routes>
