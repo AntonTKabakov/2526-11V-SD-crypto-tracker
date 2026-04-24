@@ -12,7 +12,7 @@ import {
 } from "motion/react";
 import { useEffect, useRef } from "react";
 
-// Helper component for gradient layers
+// Helper component for reusable animated gradient layers.
 function GradientLayer({
   springX,
   springY,
@@ -214,7 +214,7 @@ export const NoiseBackground = ({
         }}
       />
 
-      {/* Static Noise Pattern */}
+      {/* Static noise overlay keeps texture consistent while gradients move. */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <img
           src="https://assets.aceternity.com/noise.webp"

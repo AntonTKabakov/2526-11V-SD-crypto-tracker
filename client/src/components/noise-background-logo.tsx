@@ -1,5 +1,4 @@
 import { NoiseBackground } from "@/components/ui/noise-background";
-import React = require("react");
 
 import icon from "../../public/icon.png";
 

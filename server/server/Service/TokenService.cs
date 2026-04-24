@@ -8,7 +8,12 @@ namespace server.Service;
 
 public class TokenService
 {
-    private readonly string _accessSecret = "ACCESS_SECRET_KEY_123ACCESS_SECRET_KEY_123";//temp
+    private readonly string _accessSecret;
+
+    public TokenService(JwtSettings jwtSettings)
+    {
+        _accessSecret = jwtSettings.AccessSecret;
+    }
 
     public string GenerateAccessToken(string userId)
     {

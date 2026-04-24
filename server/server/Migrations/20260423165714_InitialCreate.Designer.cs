@@ -12,8 +12,8 @@ using server.Date;
 namespace server.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260418184926_ChangeRefreshToken")]
-    partial class ChangeRefreshToken
+    [Migration("20260423165714_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -53,6 +53,28 @@ namespace server.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Session");
+                });
+
+            modelBuilder.Entity("server.Models.CryptoPriceSnapshot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AssetsJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Timestamp");
+
+                    b.ToTable("CryptoPriceSnapshots");
                 });
 
             modelBuilder.Entity("server.Models.RefreshToken", b =>
@@ -95,6 +117,49 @@ namespace server.Migrations
                     b.ToTable("RefreshToken");
                 });
 
+            modelBuilder.Entity("server.Models.Transaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(38, 18)
+                        .HasColumnType("numeric(38,18)");
+
+                    b.Property<string>("AssetSymbol")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("PriceAtPurchase")
+                        .HasPrecision(38, 18)
+                        .HasColumnType("numeric(38,18)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "AssetSymbol");
+
+                    b.HasIndex("UserId", "Timestamp");
+
+                    b.ToTable("Transactions");
+                });
+
             modelBuilder.Entity("server.Models.User", b =>
                 {
                     b.Property<int>("Id")
@@ -124,12 +189,66 @@ namespace server.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("WalletAddress")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("WalletChain")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("WalletConnectedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("server.Models.WalletSnapshot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AssetsJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Chain")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("TotalValueUsd")
+                        .HasPrecision(38, 18)
+                        .HasColumnType("numeric(38,18)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("WalletAddress")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "Timestamp");
+
+                    b.HasIndex("UserId", "WalletAddress", "Chain", "Timestamp");
+
+                    b.ToTable("WalletSnapshots");
                 });
 
             modelBuilder.Entity("Session", b =>
@@ -154,6 +273,28 @@ namespace server.Migrations
                     b.Navigation("Session");
                 });
 
+            modelBuilder.Entity("server.Models.Transaction", b =>
+                {
+                    b.HasOne("server.Models.User", "User")
+                        .WithMany("Transactions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("server.Models.WalletSnapshot", b =>
+                {
+                    b.HasOne("server.Models.User", "User")
+                        .WithMany("WalletSnapshots")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Session", b =>
                 {
                     b.Navigation("RefreshTokens");
@@ -162,6 +303,10 @@ namespace server.Migrations
             modelBuilder.Entity("server.Models.User", b =>
                 {
                     b.Navigation("Sessions");
+
+                    b.Navigation("Transactions");
+
+                    b.Navigation("WalletSnapshots");
                 });
 #pragma warning restore 612, 618
         }

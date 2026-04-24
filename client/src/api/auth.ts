@@ -1,68 +1,50 @@
-const API_URL = "https://localhost:7269/api/auth";
+import { ApiError, apiRequest } from "./client";
 
-export interface Response {
+export interface AuthResponse {
   isSuccess: boolean;
   email: string;
   username: string;
 }
 
-export async function login(email: string, password: string): Promise<Response | null> {
-  const res = await fetch(`${API_URL}/login`, {
+export async function login(
+  email: string,
+  password: string,
+): Promise<AuthResponse> {
+  return apiRequest<AuthResponse>("/auth/login", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    credentials: "include",
-    body: JSON.stringify({ email, password })
+    body: JSON.stringify({ email, password }),
   });
-
-  if (!res.ok) {
-    throw new Error("Login failed");
-  }else
-  {
-    return res.json();
-  }
 }
 
-export async function register(email: string, password: string, username: string): Promise<Response | null> {
-  const res = await fetch(`${API_URL}/register`, {
+export async function register(
+  email: string,
+  password: string,
+  username: string,
+): Promise<AuthResponse> {
+  return apiRequest<AuthResponse>("/auth/register", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    credentials: "include",
-    body: JSON.stringify({ email, password, username })
+    body: JSON.stringify({ email, password, username }),
   });
-
-  if (!res.ok) {
-    throw new Error("Register failed");
-  }else
-  {
-    return res.json();
-  }
 }
 
 export async function logout() {
-  const res = await fetch(`${API_URL}/logout`, {
+  await apiRequest<void>("/auth/logout", {
     method: "POST",
-    credentials: "include"
   });
 
-  if (!res.ok) {
-    throw new Error("Logout failed");
-  }else
-  {
-    return true;
-  }
+  return true;
 }
 
-export async function refresh(): Promise<Response | null> {
-  const res = await fetch(`${API_URL}/refresh`, {
-    method: "POST",
-    credentials: "include"
-  });
+export async function refresh(): Promise<AuthResponse | null> {
+  try {
+    return await apiRequest<AuthResponse>("/auth/refresh", {
+      method: "POST",
+    });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) {
+      return null;
+    }
 
-  if (!res.ok) return null;
-
-  return await res.json();
+    throw error;
+  }
 }

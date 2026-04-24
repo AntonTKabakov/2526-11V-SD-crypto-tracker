@@ -1,11 +1,11 @@
 "use client";
 import { cn } from "@/lib/utils";
-import React from "react";
-import { motion, AnimatePresence, useAnimate } from "motion/react";
+import { motion, useAnimate } from "motion/react";
+import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from "react";
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export const Button = ({ className, children, ...props }: ButtonProps) => {
@@ -63,7 +63,7 @@ export const Button = ({ className, children, ...props }: ButtonProps) => {
     );
   };
 
-  const handleClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleClick = async (event: MouseEvent<HTMLButtonElement>) => {
     await animateLoading();
     await props.onClick?.(event);
     await animateSuccess();

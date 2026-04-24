@@ -17,15 +17,15 @@ import {
 } from "motion/react";
 
 import { useRef, useState } from "react";
-import React = require("react");
-import { Link } from "react-router";
+import type { ReactNode } from "react";
+import { NavLink } from "react-router-dom";
 
 export const FloatingDock = ({
   items,
   desktopClassName,
   mobileClassName,
 }: {
-  items: { title: string; icon: React.ReactNode; href: string }[];
+  items: { title: string; icon: ReactNode; href: string; end?: boolean }[];
   desktopClassName?: string;
   mobileClassName?: string;
 }) => {
@@ -41,7 +41,7 @@ const FloatingDockMobile = ({
   items,
   className,
 }: {
-  items: { title: string; icon: React.ReactNode; href: string }[];
+  items: { title: string; icon: ReactNode; href: string; end?: boolean }[];
   className?: string;
 }) => {
   const [open, setOpen] = useState(false);
@@ -70,14 +70,19 @@ const FloatingDockMobile = ({
                 }}
                 transition={{ delay: (items.length - 1 - idx) * 0.05 }}
               >
-                <Link to={item.href} >
-                  <a
-                    key={item.title}
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0B0B0F]/80 backdrop-blur-xl border border-white/10"
-                  >
-                    <div className="h-4 w-4">{item.icon}</div>
-                  </a>
-                </Link>
+                <NavLink
+                  className={({ isActive }) =>
+                    cn(
+                      "flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-[#0B0B0F]/80 text-neutral-300 backdrop-blur-xl transition-colors duration-200",
+                      isActive && "border-[#00F5C8]/40 bg-[#00F5C8]/15 text-[#00F5C8]",
+                    )
+                  }
+                  end={item.end}
+                  key={item.title}
+                  to={item.href}
+                >
+                  <div className="h-4 w-4">{item.icon}</div>
+                </NavLink>
               </motion.div>
             ))}
           </motion.div>
@@ -97,7 +102,7 @@ const FloatingDockDesktop = ({
   items,
   className,
 }: {
-  items: { title: string; icon: React.ReactNode; href: string }[];
+  items: { title: string; icon: ReactNode; href: string; end?: boolean }[];
   className?: string;
 }) => {
   let mouseX = useMotionValue(Infinity);
@@ -122,11 +127,13 @@ function IconContainer({
   title,
   icon,
   href,
+  end,
 }: {
   mouseX: MotionValue;
   title: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   href: string;
+  end?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -168,34 +175,39 @@ function IconContainer({
   const [hovered, setHovered] = useState(false);
 
   return (
-    <a href={href}>
-      <motion.div
-        ref={ref}
-        style={{ width, height }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        className="relative flex aspect-square items-center justify-center rounded-full bg-[#223B55] border border-white/10"
-      >
-        <AnimatePresence>
-          {hovered && (
-            <motion.div
-              initial={{ opacity: 0, y: 10, x: "-50%" }}
-              animate={{ opacity: 1, y: 0, x: "-50%" }}
-              exit={{ opacity: 0, y: 2, x: "-50%" }}
-              className="absolute -bottom-10 left-1/2 w-fit rounded-md border border-gray-200 bg-gray-100 px-2 py-0.5 text-xs whitespace-pre text-neutral-700 dark:border-neutral-900 dark:bg-neutral-800 dark:text-white"
-            >
-              {title}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
+    <NavLink end={end} to={href}>
+      {({ isActive }) => (
         <motion.div
-          style={{ width: widthIcon, height: heightIcon }}
-          className="flex items-center justify-center"
+          ref={ref}
+          style={{ width, height }}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          className={cn(
+            "relative flex aspect-square items-center justify-center rounded-full border border-white/10 bg-[#223B55] text-neutral-300 transition-colors duration-200",
+            isActive && "border-[#00F5C8]/50 bg-[#00F5C8]/20 text-[#00F5C8]",
+          )}
         >
-          {icon}
+          <AnimatePresence>
+            {hovered && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, x: "-50%" }}
+                animate={{ opacity: 1, y: 0, x: "-50%" }}
+                exit={{ opacity: 0, y: 2, x: "-50%" }}
+                className="absolute -bottom-10 left-1/2 w-fit rounded-md border border-gray-200 bg-gray-100 px-2 py-0.5 text-xs whitespace-pre text-neutral-700 dark:border-neutral-900 dark:bg-neutral-800 dark:text-white"
+              >
+                {title}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <motion.div
+            style={{ width: widthIcon, height: heightIcon }}
+            className="flex items-center justify-center"
+          >
+            {icon}
+          </motion.div>
         </motion.div>
-      </motion.div>
-    </a>
+      )}
+    </NavLink>
   );
 }

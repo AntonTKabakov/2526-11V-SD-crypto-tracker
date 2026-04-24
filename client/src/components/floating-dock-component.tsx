@@ -1,83 +1,38 @@
-import React from "react";
 import { FloatingDock } from "@/components/ui/floating-dock";
-import { GooeyInput } from "@/components/ui/gooey-input";
-import {
-  IconBrandGithub,
-  IconBrandX,
-  IconExchange,
-  IconHome,
-  IconNewSection,
-  IconTerminal2,
-} from "@tabler/icons-react";
+import { ChartPie, Coins, House, Landmark, ScanSearch } from "lucide-react";
 
 export default function FloatingDockComponent() {
   const links = [
     {
       title: "Home",
-      icon: (
-        <IconHome className="h-full w-full text-neutral-500 dark:text-neutral-300" />
-      ),
+      icon: <House className="h-full w-full" />,
       href: "/",
-    },
-
-    {
-      title: "Products",
-      icon: (
-        <IconTerminal2 className="h-full w-full text-neutral-500 dark:text-neutral-300" />
-      ),
-      href: "#",
+      end: true,
     },
     {
-      title: "Components",
-      icon: (
-        <IconNewSection className="h-full w-full text-neutral-500 dark:text-neutral-300" />
-      ),
-      href: "#",
+      title: "Wallet",
+      icon: <Landmark className="h-full w-full" />,
+      href: "/wallet",
     },
     {
-      title: "Aceternity UI",
-      icon: (
-        <img
-          src="https://assets.aceternity.com/logo-dark.png"
-          width={20}
-          height={20}
-          alt="Aceternity Logo"
-        />
-      ),
-      href: "#",
+      title: "Assets",
+      icon: <Coins className="h-full w-full" />,
+      href: "/assets",
     },
     {
-      title: "Changelog",
-      icon: (
-        <IconExchange className="h-full w-full text-neutral-500 dark:text-neutral-300" />
-      ),
-      href: "#",
-    },
-
-    {
-      title: "Twitter",
-      icon: (
-        <IconBrandX className="h-full w-full text-neutral-500 dark:text-neutral-300" />
-      ),
-      href: "#",
+      title: "History",
+      icon: <ScanSearch className="h-full w-full" />,
+      href: "/history",
     },
     {
-      title: "GitHub",
-      icon: (
-        <IconBrandGithub className=" h-full w-full text-neutral-500 dark:text-neutral-300" />
-      ),
-      href: "#",
+      title: "Statistics",
+      icon: <ChartPie className="h-full w-full" />,
+      href: "/statistics",
     },
   ];
   return (
-    <div className="flex flex-row items-center justify-center gap-4 h-[10rem] w-full">
+    <div className="flex h-[10rem] w-full items-center justify-center">
       <FloatingDock items={links} desktopClassName="mx-0" />
-
-      <GooeyInput 
-        placeholder="Search for projects..." 
-        collapsedWidth={48} 
-        expandedWidth={220} 
-      />
     </div>
   );
 }

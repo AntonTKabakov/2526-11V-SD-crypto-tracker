@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MotionValue, motion, useScroll, useTransform } from "motion/react";
 import { cn } from "@/lib/utils";
 import {
@@ -33,8 +33,8 @@ export const MacbookScroll = ({
 }: {
   src?: string;
   showGradient?: boolean;
-  title?: string | React.ReactNode;
-  badge?: React.ReactNode;
+  title?: string | ReactNode;
+  badge?: ReactNode;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -551,7 +551,7 @@ export const KBtn = ({
   backlit = true,
 }: {
   className?: string;
-  children?: React.ReactNode;
+  children?: ReactNode;
   childrenClassName?: string;
   backlit?: boolean;
 }) => {
