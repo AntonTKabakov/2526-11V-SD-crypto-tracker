@@ -43,7 +43,7 @@ public class PortfolioController : ControllerBase
     }
 
     [HttpGet("history")]
-    public async Task<IActionResult> GetHistory(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetHistory([FromQuery] int? days, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
 
@@ -52,10 +52,16 @@ public class PortfolioController : ControllerBase
             return Unauthorized();
         }
 
+        if (days.HasValue && days.Value <= 0)
+        {
+            return BadRequest("days must be greater than zero.");
+        }
+
         try
         {
             var snapshots = await _portfolioSnapshotService.GetSnapshotsAsync(
                 userId.Value,
+                days,
                 cancellationToken);
 
             return Ok(snapshots);
@@ -67,7 +73,7 @@ public class PortfolioController : ControllerBase
     }
 
     [HttpGet("statistics")]
-    public async Task<IActionResult> GetStatistics(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetStatistics([FromQuery] int? days, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
 
@@ -76,10 +82,16 @@ public class PortfolioController : ControllerBase
             return Unauthorized();
         }
 
+        if (days.HasValue && days.Value <= 0)
+        {
+            return BadRequest("days must be greater than zero.");
+        }
+
         try
         {
             var statistics = await _portfolioSnapshotService.CalculateHistoricalPerformanceAsync(
                 userId.Value,
+                days,
                 cancellationToken);
 
             return Ok(statistics);

@@ -1,5 +1,4 @@
 import { FloatingDock } from "@/components/ui/floating-dock";
-import { GooeyInput } from "@/components/ui/gooey-input";
 import { ChartPie, Coins, House, Landmark, ScanSearch } from "lucide-react";
 
 export default function FloatingDockComponent() {
@@ -32,14 +31,8 @@ export default function FloatingDockComponent() {
     },
   ];
   return (
-    <div className="flex flex-row items-center justify-center gap-4 h-[10rem] w-full">
+    <div className="flex h-[10rem] w-full items-center justify-center">
       <FloatingDock items={links} desktopClassName="mx-0" />
-
-      <GooeyInput 
-        placeholder="Search crypto..." 
-        collapsedWidth={48} 
-        expandedWidth={220} 
-      />
     </div>
   );
 }

@@ -13,13 +13,14 @@ import {
 } from "recharts";
 
 import { getApiErrorMessage } from "@/api/client";
+import DashboardCard from "@/components/dashboard-card";
+import DashboardPageHeader from "@/components/dashboard-page-header";
+import TimeRangeToggle, { type TimeRangeOption } from "@/components/time-range-toggle";
 import {
   getPortfolioStatistics,
   type AssetPerformance,
   type PortfolioStatistics,
 } from "@/api/portfolio";
-import DashboardCard from "@/components/dashboard-card";
-import DashboardPageHeader from "@/components/dashboard-page-header";
 import { formatAmount, formatCurrency, formatPercent } from "@/lib/formatters";
 
 const chartColors = [
@@ -37,13 +38,20 @@ export default function Statistics() {
   const [statistics, setStatistics] = useState<PortfolioStatistics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [range, setRange] = useState<TimeRangeOption>("30d");
+
+  const selectedRangeDays = range === "30d" ? 30 : undefined;
+  const performance = statistics?.performance;
 
   useEffect(() => {
     let isMounted = true;
 
     const run = async () => {
+      setIsLoading(true);
+      setErrorMessage("");
+
       try {
-        const result = await getPortfolioStatistics();
+        const result = await getPortfolioStatistics(selectedRangeDays);
 
         if (!isMounted) {
           return;
@@ -68,16 +76,14 @@ export default function Statistics() {
     return () => {
       isMounted = false;
     };
-  }, []);
-
-  const performance = statistics?.performance;
+  }, [selectedRangeDays]);
 
   return (
     <div className="mx-auto max-w-7xl px-6">
       <DashboardPageHeader
         eyebrow="Statistics"
-        title="Snapshot-based performance, allocation, and leaders"
-        description="The dashboard compares the latest snapshot against the earliest stored baseline, visualizes the database-backed portfolio curve, and ranks assets by their change over the captured history."
+        title="Performance, allocation, and leaders with a 30-day default lens"
+        description="The dashboard now emphasizes the most recent month first, so the performance curve and movers feel current instead of diluted by the full archive."
       />
 
       {isLoading ? (
@@ -94,9 +100,23 @@ export default function Statistics() {
         </DashboardCard>
       ) : (
         <div className="space-y-6">
+          <DashboardCard>
+            <div className="flex flex-wrap items-start justify-between gap-5">
+              <div>
+                <h2 className="text-lg font-semibold text-white">Statistics window</h2>
+                <p className="mt-2 max-w-2xl text-sm text-white/60">
+                  Compare the last 30 days by default or expand the view to the full
+                  stored portfolio history whenever you need the longer trend.
+                </p>
+              </div>
+
+              <TimeRangeToggle onChange={setRange} value={range} />
+            </div>
+          </DashboardCard>
+
           <div className="grid gap-6 md:grid-cols-3">
             <MetricCard
-              label="Change since first snapshot"
+              label={range === "30d" ? "30-day change" : "Change since first snapshot"}
               tone={performance.changeValueUsd}
               value={formatCurrency(performance.changeValueUsd)}
               secondary={formatPercent(performance.changePercentage)}
@@ -105,13 +125,15 @@ export default function Statistics() {
               label="Current value"
               tone={performance.currentValueUsd}
               value={formatCurrency(performance.currentValueUsd)}
-              secondary="Latest stored snapshot"
+              secondary="Latest snapshot in range"
             />
             <MetricCard
               label="Starting value"
               tone={performance.startingValueUsd}
               value={formatCurrency(performance.startingValueUsd)}
-              secondary="First stored snapshot"
+              secondary={
+                range === "30d" ? "Oldest snapshot in the last 30 days" : "First stored snapshot"
+              }
             />
           </div>
 
@@ -141,7 +163,9 @@ export default function Statistics() {
 
             {statistics.history.length === 0 ? (
               <p className="mt-10 text-sm text-white/70">
-                Capture snapshots to populate the historical performance chart.
+                {range === "30d"
+                  ? "No snapshots were captured in the last 30 days yet."
+                  : "Capture snapshots to populate the historical performance chart."}
               </p>
             ) : (
               <div className="mt-8 h-[320px]">
@@ -196,7 +220,7 @@ export default function Statistics() {
               <div>
                 <h2 className="text-lg font-semibold text-white">Asset distribution</h2>
                 <p className="mt-2 text-sm text-white/60">
-                  Allocation is based on the latest snapshot valuation.
+                  Allocation is based on the latest snapshot inside the selected window.
                 </p>
 
                 {statistics.distribution.length === 0 ? (
@@ -272,12 +296,12 @@ export default function Statistics() {
             <div className="grid gap-6">
               <PerformanceCard
                 asset={statistics.bestAsset}
-                label="Best asset over time"
+                label={range === "30d" ? "Best asset in 30 days" : "Best asset over time"}
                 emptyLabel="No asset history yet."
               />
               <PerformanceCard
                 asset={statistics.worstAsset}
-                label="Worst asset over time"
+                label={range === "30d" ? "Worst asset in 30 days" : "Worst asset over time"}
                 emptyLabel="No asset history yet."
               />
             </div>

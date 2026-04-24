@@ -13,6 +13,7 @@ public interface IPortfolioSnapshotService
 
     Task<IReadOnlyList<WalletSnapshotView>> GetSnapshotsAsync(
         int userId,
+        int? days = null,
         CancellationToken cancellationToken = default);
 
     Task<WalletSnapshotView?> GetLatestSnapshotAsync(
@@ -21,5 +22,6 @@ public interface IPortfolioSnapshotService
 
     Task<PortfolioStatistics> CalculateHistoricalPerformanceAsync(
         int userId,
+        int? days = null,
         CancellationToken cancellationToken = default);
 }

@@ -6,8 +6,8 @@ export default function MainBackround ()
         <div className="relative h-full w-full bg-slate-950
           [&>div]:absolute
           [&>div]:bottom-0
-          [&>div]:right-[-20%]
-          [&>div]:top-[-10%]
+          [&>div]:right-[-50%]
+          [&>div]:top-[-30%]
           [&>div]:h-[500px]
           [&>div]:w-[500px]
           [&>div]:rounded-full

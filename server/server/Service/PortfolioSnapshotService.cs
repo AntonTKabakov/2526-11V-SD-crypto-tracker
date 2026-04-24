@@ -104,11 +104,10 @@ public class PortfolioSnapshotService : IPortfolioSnapshotService
 
     public async Task<IReadOnlyList<WalletSnapshotView>> GetSnapshotsAsync(
         int userId,
+        int? days = null,
         CancellationToken cancellationToken = default)
     {
-        var snapshots = await _db.WalletSnapshots
-            .AsNoTracking()
-            .Where(snapshot => snapshot.UserId == userId)
+        var snapshots = await BuildSnapshotQuery(userId, days)
             .OrderByDescending(snapshot => snapshot.Timestamp)
             .ToListAsync(cancellationToken);
 
@@ -132,11 +131,10 @@ public class PortfolioSnapshotService : IPortfolioSnapshotService
 
     public async Task<PortfolioStatistics> CalculateHistoricalPerformanceAsync(
         int userId,
+        int? days = null,
         CancellationToken cancellationToken = default)
     {
-        var snapshots = await _db.WalletSnapshots
-            .AsNoTracking()
-            .Where(snapshot => snapshot.UserId == userId)
+        var snapshots = await BuildSnapshotQuery(userId, days)
             .OrderBy(snapshot => snapshot.Timestamp)
             .ToListAsync(cancellationToken);
 
@@ -249,6 +247,21 @@ public class PortfolioSnapshotService : IPortfolioSnapshotService
             .ToList();
 
         return performance;
+    }
+
+    private IQueryable<WalletSnapshot> BuildSnapshotQuery(int userId, int? days)
+    {
+        var query = _db.WalletSnapshots
+            .AsNoTracking()
+            .Where(snapshot => snapshot.UserId == userId);
+
+        if (days.HasValue)
+        {
+            var cutoff = DateTime.UtcNow.AddDays(-days.Value);
+            query = query.Where(snapshot => snapshot.Timestamp >= cutoff);
+        }
+
+        return query;
     }
 
     private async Task<WalletSnapshot?> GetLatestSnapshotEntityAsync(

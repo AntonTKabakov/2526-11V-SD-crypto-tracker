@@ -102,9 +102,21 @@ export async function getAssets(): Promise<WalletAssetSnapshot[]> {
 }
 
 export async function getSnapshotHistory(): Promise<WalletSnapshot[]> {
-  return apiRequest<WalletSnapshot[]>("/portfolio/history");
+  return getSnapshotHistoryForRange();
 }
 
-export async function getPortfolioStatistics(): Promise<PortfolioStatistics> {
-  return apiRequest<PortfolioStatistics>("/portfolio/statistics");
+export async function getSnapshotHistoryForRange(
+  days?: number,
+): Promise<WalletSnapshot[]> {
+  return apiRequest<WalletSnapshot[]>(`/portfolio/history${buildRangeQuery(days)}`);
+}
+
+export async function getPortfolioStatistics(
+  days?: number,
+): Promise<PortfolioStatistics> {
+  return apiRequest<PortfolioStatistics>(`/portfolio/statistics${buildRangeQuery(days)}`);
+}
+
+function buildRangeQuery(days?: number): string {
+  return days ? `?days=${days}` : "";
 }

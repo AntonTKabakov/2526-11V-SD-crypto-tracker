@@ -102,8 +102,9 @@ export function GooeyInput({
         }}
         transition={transition}
         onClick={() => {
-          !isExpanded && setIsExpanded(true)
-          console.log(value);
+          if (!isExpanded) {
+            setIsExpanded(true);
+          }
         }}
         className={cn(
           "flex h-12 items-center rounded-full overflow-hidden shrink-0 cursor-pointer", 

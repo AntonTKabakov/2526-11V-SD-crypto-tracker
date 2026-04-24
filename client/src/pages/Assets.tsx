@@ -18,6 +18,7 @@ import {
 } from "@/api/crypto";
 import DashboardCard from "@/components/dashboard-card";
 import DashboardPageHeader from "@/components/dashboard-page-header";
+import TimeRangeToggle, { type TimeRangeOption } from "@/components/time-range-toggle";
 import { formatDateTime } from "@/lib/formatters";
 
 export default function Assets() {
@@ -28,6 +29,7 @@ export default function Assets() {
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [historyErrorMessage, setHistoryErrorMessage] = useState("");
+  const [historyRange, setHistoryRange] = useState<TimeRangeOption>("30d");
 
   useEffect(() => {
     let isMounted = true;
@@ -114,13 +116,20 @@ export default function Assets() {
 
   const selectedAsset =
     assets.find((asset) => asset.assetId === selectedAssetId) ?? null;
+  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const visiblePriceHistory =
+    historyRange === "30d"
+      ? priceHistory.filter((point) => {
+          return new Date(point.timestamp).getTime() >= thirtyDaysAgo;
+        })
+      : priceHistory;
 
   return (
     <div className="mx-auto max-w-7xl px-6">
       <DashboardPageHeader
         eyebrow="Assets"
         title="Supported cryptocurrencies with live prices"
-        description="Current prices come from the latest stored backend snapshot, and the chart below visualizes the database-backed price history collected over time."
+        description="Current prices come from the latest stored backend snapshot, and the chart below now defaults to the last 30 days so recent movement is easier to read."
       />
 
       {isLoading ? (
@@ -167,12 +176,16 @@ export default function Assets() {
             </div>
 
             {selectedAsset ? (
-              <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-white/60">
-                <span className="font-medium text-white">{selectedAsset.name}</span>
-                <span className="uppercase tracking-[0.25em] text-[#00F5C8]">
-                  {selectedAsset.symbol}
-                </span>
-                <span>Latest stored price {formatAssetPrice(selectedAsset.currentPrice)}</span>
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-white/60">
+                  <span className="font-medium text-white">{selectedAsset.name}</span>
+                  <span className="uppercase tracking-[0.25em] text-[#00F5C8]">
+                    {selectedAsset.symbol}
+                  </span>
+                  <span>Latest stored price {formatAssetPrice(selectedAsset.currentPrice)}</span>
+                </div>
+
+                <TimeRangeToggle onChange={setHistoryRange} value={historyRange} />
               </div>
             ) : null}
 
@@ -180,14 +193,16 @@ export default function Assets() {
               <div className="mt-8 text-white/70">Loading stored price history...</div>
             ) : historyErrorMessage ? (
               <div className="mt-8 text-sm text-rose-300">{historyErrorMessage}</div>
-            ) : priceHistory.length === 0 ? (
+            ) : visiblePriceHistory.length === 0 ? (
               <div className="mt-8 text-sm text-white/70">
-                No stored price history exists for this asset yet.
+                {historyRange === "30d"
+                  ? "No stored price history exists for this asset in the last 30 days yet."
+                  : "No stored price history exists for this asset yet."}
               </div>
             ) : (
               <div className="mt-8 h-[320px]">
                 <ResponsiveContainer height="100%" width="100%">
-                  <AreaChart data={priceHistory}>
+                  <AreaChart data={visiblePriceHistory}>
                     <defs>
                       <linearGradient id="assetPriceHistoryFill" x1="0" x2="0" y1="0" y2="1">
                         <stop offset="0%" stopColor="#00F5C8" stopOpacity={0.4} />

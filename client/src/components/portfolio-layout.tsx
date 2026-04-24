@@ -1,53 +1,23 @@
-import { NavLink, Outlet } from "react-router-dom";
-
-const navigationItems = [
-  { href: "/assets", label: "Assets" },
-  { href: "/history", label: "History" },
-  { href: "/statistics", label: "Statistics" },
-  { href: "/wallet", label: "Wallet" },
-];
+import { Outlet } from "react-router-dom";
+import FloatingDockComponent from "./floating-dock-component";
+import NoiseBackgroundIcon from "./noise-background-logo";
+import MainBackround from "./main-backroudn";
 
 export default function PortfolioLayout() {
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto max-w-7xl px-6 pb-12 pt-8">
-        <header className="rounded-[32px] border border-white/10 bg-white/[0.03] px-6 py-6 shadow-[0_24px_60px_rgba(2,6,23,0.4)]">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl">
-              <p className="text-xs uppercase tracking-[0.35em] text-cyan-300/80">
-                Crypto tracker
-              </p>
-              <h1 className="mt-3 text-3xl font-semibold text-white">
-                Portfolio dashboard
-              </h1>
-              <p className="mt-3 text-sm leading-6 text-white/60">
-                Start with the wallet workspace and layer historical views on top
-                as the stored portfolio data expands.
-              </p>
-            </div>
+    <div className="relative w-full min-h-screen overflow-hidden bg-white dark:bg-[#0B0B0F]">
+      <MainBackround />
 
-            <nav className="flex flex-wrap gap-3">
-              {navigationItems.map((item) => (
-                <NavLink
-                  key={item.href}
-                  to={item.href}
-                  className={({ isActive }) =>
-                    [
-                      "rounded-full border px-4 py-2 text-sm font-medium transition",
-                      isActive
-                        ? "border-cyan-300/60 bg-cyan-300/15 text-cyan-200"
-                        : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20 hover:text-white",
-                    ].join(" ")
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              ))}
-            </nav>
-          </div>
-        </header>
+      <div className="absolute left-12 top-12 w-40 h-40">
+        <NoiseBackgroundIcon />
+      </div>
 
-        <main className="pt-8">
+      <div className="relative z-10">
+        <div className="flex justify-center py-4">
+          <FloatingDockComponent />
+        </div>
+
+        <main>
           <Outlet />
         </main>
       </div>
