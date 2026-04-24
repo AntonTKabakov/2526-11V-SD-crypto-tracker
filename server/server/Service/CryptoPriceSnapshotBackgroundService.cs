@@ -18,6 +18,8 @@ public class CryptoPriceSnapshotBackgroundService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        await BackfillHistoryAsync(stoppingToken);
+
         using var timer = new PeriodicTimer(_settings.SnapshotInterval);
 
         while (!stoppingToken.IsCancellationRequested)
@@ -35,6 +37,28 @@ public class CryptoPriceSnapshotBackgroundService : BackgroundService
         }
     }
 
+    private async Task BackfillHistoryAsync(CancellationToken cancellationToken)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var snapshotService = scope.ServiceProvider.GetRequiredService<ICryptoPriceSnapshotService>();
+
+        try
+        {
+            await snapshotService.BackfillHistoryAsync(cancellationToken);
+        }
+        catch (ExternalServiceException ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Crypto price history backfill skipped because an upstream service failed: {Message}",
+                ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Crypto price history backfill failed.");
+        }
+    }
+
     private async Task CaptureSnapshotAsync(CancellationToken cancellationToken)
     {
         using var scope = _scopeFactory.CreateScope();
@@ -45,6 +69,13 @@ public class CryptoPriceSnapshotBackgroundService : BackgroundService
             await snapshotService.CaptureSnapshotAsync(
                 force: false,
                 cancellationToken);
+        }
+        catch (ExternalServiceException ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Crypto price snapshot capture skipped because an upstream service failed: {Message}",
+                ex.Message);
         }
         catch (Exception ex)
         {

@@ -3,6 +3,7 @@ namespace server.Service;
 public class CryptoPriceSnapshotSettings
 {
     public TimeSpan SnapshotInterval { get; init; } = TimeSpan.FromMinutes(15);
+    public int BackfillDays { get; init; } = 30;
 
     public static CryptoPriceSnapshotSettings FromEnvironment()
     {
@@ -10,10 +11,15 @@ public class CryptoPriceSnapshotSettings
         var intervalMinutes = int.TryParse(intervalMinutesValue, out var parsedMinutes) && parsedMinutes > 0
             ? parsedMinutes
             : 15;
+        var backfillDaysValue = Environment.GetEnvironmentVariable("CRYPTO_PRICE_BACKFILL_DAYS");
+        var backfillDays = int.TryParse(backfillDaysValue, out var parsedBackfillDays) && parsedBackfillDays >= 0
+            ? parsedBackfillDays
+            : 30;
 
         return new CryptoPriceSnapshotSettings
         {
-            SnapshotInterval = TimeSpan.FromMinutes(intervalMinutes)
+            SnapshotInterval = TimeSpan.FromMinutes(intervalMinutes),
+            BackfillDays = backfillDays
         };
     }
 }

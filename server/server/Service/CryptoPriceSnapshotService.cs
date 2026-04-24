@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using server.Date;
 using server.Models;
@@ -8,20 +9,37 @@ namespace server.Service;
 public class CryptoPriceSnapshotService : ICryptoPriceSnapshotService
 {
     private static readonly JsonSerializerOptions SnapshotJsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly IReadOnlyDictionary<string, (string Name, string Symbol)> FallbackAssetMetadata =
+        new Dictionary<string, (string Name, string Symbol)>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["bitcoin"] = ("Bitcoin", "BTC"),
+            ["ethereum"] = ("Ethereum", "ETH"),
+            ["solana"] = ("Solana", "SOL"),
+            ["ripple"] = ("Ripple", "XRP"),
+            ["cardano"] = ("Cardano", "ADA"),
+            ["dogecoin"] = ("Dogecoin", "DOGE"),
+            ["tron"] = ("TRON", "TRX"),
+            ["avalanche-2"] = ("Avalanche", "AVAX"),
+            ["polkadot"] = ("Polkadot", "DOT"),
+            ["chainlink"] = ("Chainlink", "LINK")
+        };
 
     private readonly AppDbContext _db;
     private readonly ICryptoService _cryptoService;
+    private readonly CoinGeckoSettings _coinGeckoSettings;
     private readonly CryptoPriceSnapshotSettings _settings;
     private readonly ILogger<CryptoPriceSnapshotService> _logger;
 
     public CryptoPriceSnapshotService(
         AppDbContext db,
         ICryptoService cryptoService,
+        CoinGeckoSettings coinGeckoSettings,
         CryptoPriceSnapshotSettings settings,
         ILogger<CryptoPriceSnapshotService> logger)
     {
         _db = db;
         _cryptoService = cryptoService;
+        _coinGeckoSettings = coinGeckoSettings;
         _settings = settings;
         _logger = logger;
     }
@@ -32,6 +50,73 @@ public class CryptoPriceSnapshotService : ICryptoPriceSnapshotService
     {
         var latestSnapshot = await GetLatestSnapshotEntityAsync(cancellationToken);
         await CaptureSnapshotEntityAsync(latestSnapshot, force, cancellationToken);
+    }
+
+    public async Task BackfillHistoryAsync(
+        CancellationToken cancellationToken = default)
+    {
+        if (_settings.BackfillDays <= 0)
+        {
+            return;
+        }
+
+        var backfillStartUtc = DateTime.UtcNow.AddDays(-_settings.BackfillDays);
+        var oldestSnapshot = await _db.CryptoPriceSnapshots
+            .AsNoTracking()
+            .OrderBy(snapshot => snapshot.Timestamp)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (oldestSnapshot is not null && oldestSnapshot.Timestamp <= backfillStartUtc)
+        {
+            return;
+        }
+
+        var backfillEndUtc = oldestSnapshot?.Timestamp ?? DateTime.UtcNow;
+
+        if (backfillEndUtc <= backfillStartUtc)
+        {
+            return;
+        }
+
+        var historicalSnapshots = await _cryptoService.GetHistoricalAssetsAsync(
+            backfillStartUtc,
+            backfillEndUtc,
+            cancellationToken);
+
+        if (historicalSnapshots.Count == 0)
+        {
+            return;
+        }
+
+        var existingTimestamps = await _db.CryptoPriceSnapshots
+            .AsNoTracking()
+            .Where(snapshot => snapshot.Timestamp >= backfillStartUtc && snapshot.Timestamp <= backfillEndUtc)
+            .Select(snapshot => snapshot.Timestamp)
+            .ToListAsync(cancellationToken);
+        var existingTimestampSet = existingTimestamps.ToHashSet();
+
+        var snapshotsToAdd = historicalSnapshots
+            .Where(snapshot => snapshot.Assets.Count > 0 && !existingTimestampSet.Contains(snapshot.Timestamp))
+            .Select(snapshot => new CryptoPriceSnapshot
+            {
+                Timestamp = snapshot.Timestamp,
+                AssetsJson = JsonSerializer.Serialize(snapshot.Assets, SnapshotJsonOptions)
+            })
+            .OrderBy(snapshot => snapshot.Timestamp)
+            .ToList();
+
+        if (snapshotsToAdd.Count == 0)
+        {
+            return;
+        }
+
+        _db.CryptoPriceSnapshots.AddRange(snapshotsToAdd);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Backfilled {Count} crypto price snapshots covering the last {Days} days.",
+            snapshotsToAdd.Count,
+            _settings.BackfillDays);
     }
 
     public async Task<IReadOnlyList<CryptoAssetDto>> GetLatestAssetsAsync(
@@ -56,6 +141,14 @@ public class CryptoPriceSnapshotService : ICryptoPriceSnapshotService
                 latestSnapshot.Timestamp);
 
             return DeserializeAssets(latestSnapshot.AssetsJson);
+        }
+        catch (ExternalServiceException ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Returning configured crypto assets without live prices because no stored snapshot is available.");
+
+            return BuildConfiguredAssetFallback();
         }
     }
 
@@ -141,6 +234,33 @@ public class CryptoPriceSnapshotService : ICryptoPriceSnapshotService
 
         return JsonSerializer.Deserialize<List<CryptoAssetDto>>(assetsJson, SnapshotJsonOptions)
             ?? [];
+    }
+
+    private IReadOnlyList<CryptoAssetDto> BuildConfiguredAssetFallback()
+    {
+        return _coinGeckoSettings.SupportedCoinIds
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(CreateFallbackAsset)
+            .ToArray();
+    }
+
+    private static CryptoAssetDto CreateFallbackAsset(string assetId)
+    {
+        if (FallbackAssetMetadata.TryGetValue(assetId, out var metadata))
+        {
+            return new CryptoAssetDto(assetId, metadata.Name, metadata.Symbol, 0m);
+        }
+
+        var normalizedName = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(
+            assetId.Replace('-', ' ').Trim().ToLowerInvariant());
+        var normalizedSymbol = new string(
+            assetId.Where(char.IsLetterOrDigit).Take(6).ToArray()).ToUpperInvariant();
+
+        return new CryptoAssetDto(
+            assetId,
+            string.IsNullOrWhiteSpace(normalizedName) ? assetId : normalizedName,
+            string.IsNullOrWhiteSpace(normalizedSymbol) ? assetId.ToUpperInvariant() : normalizedSymbol,
+            0m);
     }
 
     private static string NormalizeAssetId(string assetId)

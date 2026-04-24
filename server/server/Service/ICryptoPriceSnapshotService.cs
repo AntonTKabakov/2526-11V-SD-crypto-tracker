@@ -4,6 +4,9 @@ namespace server.Service;
 
 public interface ICryptoPriceSnapshotService
 {
+    Task BackfillHistoryAsync(
+        CancellationToken cancellationToken = default);
+
     Task CaptureSnapshotAsync(
         bool force,
         CancellationToken cancellationToken = default);
