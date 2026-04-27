@@ -4,10 +4,21 @@ public class DBContextStting
 {
     public string ConnStr { set; get; } = string.Empty;
 
+    public bool IsDummyInfo { set; get; } = false;
+
     public static DBContextStting FromEnvironment()
     {
         var connectionString = Environment.GetEnvironmentVariable("PG_CONNECTION") ??
             Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+
+        var isDummyInfoStr = Environment.GetEnvironmentVariable("IS_DUMMY_INFO");
+
+        var isDummyInfo = false;
+
+        if (!string.IsNullOrWhiteSpace(connectionString) || isDummyInfoStr == "true")
+        {
+            isDummyInfo = true;
+        }
 
         if (string.IsNullOrWhiteSpace(connectionString))
         {
@@ -17,7 +28,8 @@ public class DBContextStting
 
         return new DBContextStting
         {
-            ConnStr = connectionString
+            ConnStr = connectionString,
+            IsDummyInfo = isDummyInfo
         };
     }
 }

@@ -1,4 +1,4 @@
-using server.Service.Wallet;
+using server.DTO;
 
 namespace server.Service.Crypto;
 

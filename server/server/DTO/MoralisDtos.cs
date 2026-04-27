@@ -1,4 +1,4 @@
-namespace server.Service.Wallet;
+namespace server.DTO;
 
 
 public record MoralisWalletToken(

@@ -1,3 +1,5 @@
+using server.DTO;
+
 namespace server.Service.Wallet;
 
 public interface IMoralisService

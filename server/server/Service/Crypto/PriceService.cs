@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
+using server.DTO;
 using server.Extensions;
-using server.Service.Wallet;
 
 namespace server.Service.Crypto;
 

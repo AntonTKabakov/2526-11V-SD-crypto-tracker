@@ -8,13 +8,14 @@ using Scalar.AspNetCore;
 using server.Date;
 using server.Models;
 using server.Service;
-using System.Net;
-using System.Text;
 using server.Service.Crypto;
+using server.Service.DummyAccount;
 using server.Service.Portfolio;
 using server.Service.Setting;
 using server.Service.User;
 using server.Service.Wallet;
+using System.Net;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,6 +54,7 @@ builder.Services.AddSingleton(cryptoPriceSnapshotSettings);
 builder.Services.AddSingleton(moralisSettings);
 builder.Services.AddSingleton(authCookieSettings);
 builder.Services.AddSingleton(corsSettings);
+builder.Services.AddSingleton(connStr);
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders =
@@ -111,6 +113,8 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IWalletService, WalletService>();
 builder.Services.AddScoped<IWalletSnapshotService, WalletSnapshotService>();
 builder.Services.AddScoped<IPortfolioSnapshotService, PortfolioSnapshotService>();
+builder.Services.AddScoped<DummyAccountService>();
+
 builder.Services.AddHttpClient<ICryptoService, CryptoService>(ConfigureCoinGeckoHttpClient);
 builder.Services.AddHttpClient<IPriceService, PriceService>(ConfigureCoinGeckoHttpClient);
 builder.Services.AddHttpClient<IMoralisService, MoralisService>(client =>
@@ -135,6 +139,16 @@ var startupLogger = app.Services
     .CreateLogger("Startup");
 
 await MigrateDatabaseAsync(app.Services, startupLogger);
+
+using (var scope = app.Services.CreateScope())
+{
+    var conn = scope.ServiceProvider.GetRequiredService<DBContextStting>();
+
+    if (conn.IsDummyInfo)
+    {
+        scope.ServiceProvider.GetRequiredService<DummyAccountService>();
+    }
+}
 
 app.UseForwardedHeaders();
 app.UseExceptionHandler();

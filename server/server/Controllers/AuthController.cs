@@ -132,8 +132,6 @@ public class AuthController : ControllerBase
                 return;
             }
 
-            await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
-
             var user = new User
             {
                 Email = email,
@@ -159,7 +157,6 @@ public class AuthController : ControllerBase
             await _db.SaveChangesAsync(cancellationToken);
 
             result = await IssueTokens(user, session, null, cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
         });
 
         return result ?? throw new InvalidOperationException("Registration did not produce a response.");

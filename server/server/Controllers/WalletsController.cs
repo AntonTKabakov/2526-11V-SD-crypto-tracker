@@ -28,6 +28,11 @@ public class WalletsController : ControllerBase
     {
         var authenticatedUserId = User.GetUserId();
 
+        if (_walletService.IsDummyAccount(authenticatedUserId))
+        {
+            return Unauthorized();
+        }
+
         if (!authenticatedUserId.HasValue)
         {
             return Unauthorized();
@@ -59,6 +64,11 @@ public class WalletsController : ControllerBase
         CancellationToken cancellationToken)
     {
         var authenticatedUserId = User.GetUserId();
+
+        if (_walletService.IsDummyAccount(authenticatedUserId))
+        {
+            return Unauthorized();
+        }
 
         if (!authenticatedUserId.HasValue)
         {
@@ -97,6 +107,11 @@ public class WalletsController : ControllerBase
     public async Task<IActionResult> GetSnapshots(int walletId, CancellationToken cancellationToken)
     {
         var authenticatedUserId = User.GetUserId();
+
+        if (_walletService.IsDummyAccount(authenticatedUserId))
+        {
+            return Unauthorized();
+        }
 
         if (!authenticatedUserId.HasValue)
         {

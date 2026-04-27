@@ -25,6 +25,7 @@ public class PortfolioController : ControllerBase
     {
         var userId = User.GetUserId();
 
+
         if (!userId.HasValue)
         {
             return Unauthorized();

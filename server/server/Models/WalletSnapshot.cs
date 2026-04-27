@@ -7,7 +7,7 @@ public class WalletSnapshot
     public int WalletId { get; set; }
     public Wallet Wallet { get; set; } = null!;
 
-    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    public DateTime Timestamp { get; init; } = DateTime.UtcNow;
 
     public decimal TotalValue { get; set; }
 

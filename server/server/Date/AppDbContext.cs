@@ -13,7 +13,6 @@ public class AppDbContext : DbContext
 
     public DbSet<RefreshToken> RefreshToken => Set<RefreshToken>();
     public DbSet<Session> Session => Set<Session>();
-    public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<CryptoPriceSnapshot> CryptoPriceSnapshots => Set<CryptoPriceSnapshot>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -28,11 +27,6 @@ public class AppDbContext : DbContext
             e.Property(x => x.Username).HasMaxLength(50);
 
             e.HasMany(x => x.Sessions)
-                .WithOne(x => x.User)
-                .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            e.HasMany(x => x.Transactions)
                 .WithOne(x => x.User)
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -107,32 +101,6 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.Id);
             e.HasIndex(x => x.Token).IsUnique();
             e.HasIndex(x => x.SessionId);
-        });
-
-        modelBuilder.Entity<Transaction>(e =>
-        {
-            e.HasKey(x => x.Id);
-
-            e.Property(x => x.AssetSymbol)
-                .HasMaxLength(20)
-                .IsRequired();
-
-            e.Property(x => x.Amount)
-                .HasPrecision(38, 18)
-                .IsRequired();
-
-            e.Property(x => x.PriceAtPurchase)
-                .HasPrecision(38, 18)
-                .IsRequired();
-
-            e.Property(x => x.Type)
-                .HasConversion<string>()
-                .HasMaxLength(10)
-                .IsRequired();
-
-            e.HasIndex(x => x.UserId);
-            e.HasIndex(x => new { x.UserId, x.Timestamp });
-            e.HasIndex(x => new { x.UserId, x.AssetSymbol });
         });
 
         modelBuilder.Entity<CryptoPriceSnapshot>(e =>

@@ -12,6 +12,5 @@ public class User
     public DateTime LastSeenUtc { get; set; }
 
     public ICollection<Session> Sessions { get; set; } = new List<Session>();
-    public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
     public ICollection<Wallet> Wallets { get; set; } = new List<Wallet>();
 }

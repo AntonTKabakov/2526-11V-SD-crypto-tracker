@@ -14,6 +14,10 @@ public class WalletService : IWalletService
         _db = db;
         _moralisService = moralisService;
     }
+    public bool IsDummyAccount(int? id)
+    {
+        return !_db.Users.Where(u => u.Id == id).Where(u => u.Email == "demo@crypto.local").Any();
+    }
 
     public async Task<WalletView> CreateAsync(
         int authenticatedUserId,

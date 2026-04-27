@@ -20,4 +20,5 @@ public interface IPortfolioSnapshotService
         int? walletId = null,
         int? days = null,
         CancellationToken cancellationToken = default);
+
 }

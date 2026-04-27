@@ -21,4 +21,7 @@ public interface IWalletService
         int authenticatedUserId,
         int walletId,
         CancellationToken cancellationToken = default);
+
+    bool IsDummyAccount(int? id);
+
 }
